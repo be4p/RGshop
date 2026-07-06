@@ -1,0 +1,71 @@
+SizeLayoutWidgetClass "{69BCA7EFE4019F41}" : "{AF25F325D2730142}UI/layouts/Menus/Inventory/SupplyInventoryItemSlot.layout" {
+ {
+  OverlayWidgetClass "{613AB59EEB40DCCD}" {
+   Prefab "{613AB59EEB40DCCD}"
+   {
+    ButtonWidgetClass "{60D8C036C6415F2A}" {
+     Prefab "{60D8C036C6415F2A}"
+     {
+      OverlayWidgetClass "{60D8C036C6415F2D}" {
+       Prefab "{60D8C036C6415F2D}"
+       {
+        HorizontalLayoutWidgetClass "{613C7D59F6C75FA2}" {
+         Prefab "{613C7D59F6C75FA2}"
+         {
+          FrameWidgetClass "{613C7D59D5EA5E6A}" {
+           Prefab "{613C7D59D5EA5E6A}"
+           {
+            SizeLayoutWidgetClass "{5DEAD56EB801D0A2}" {
+             Prefab "{5DEAD56EB801D0A2}"
+             {
+              OverlayWidgetClass "{5DEAD56E9CA7247E}" {
+               Prefab "{5DEAD56E9CA7247E}"
+               {
+                HorizontalLayoutWidgetClass "{5DEAD56110AD29DF}" {
+                 Prefab "{5DEAD56110AD29DF}"
+                 {
+                  SizeLayoutWidgetClass "{5E9A997B1CE48435}" {
+                   Prefab "{5E9A997B1CE48435}"
+                   Slot LayoutSlot "{5E9A997B1CE483EF}" {
+                    Padding -20 0 4 0
+                   }
+                   {
+                    ImageWidgetClass "{5DEAD56110AD29D2}" {
+                     Prefab "{5DEAD56110AD29D2}"
+                     Slot AlignableSlot "{5E9A997B38192D86}" {
+                     }
+                     "Is Enabled" 0
+                     "Is Visible" 0
+                    }
+                   }
+                  }
+                  OverlayWidgetClass "{65A6D0F57F0235D9}" {
+                   Prefab "{65A6D0F57F0235D9}"
+                   Slot LayoutSlot "{65A6D0F57F02358F}" {
+                   }
+                   {
+                    RichTextWidgetClass "{5DEAD56110AD29D5}" {
+                     Prefab "{5DEAD56110AD29D5}"
+                     Slot OverlayWidgetSlot "{69B4BD6CFEC6FD17}" {
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

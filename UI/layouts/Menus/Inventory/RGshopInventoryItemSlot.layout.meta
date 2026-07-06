@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{3B35DE9811F55E29}UI/layouts/Menus/Inventory/RGshopInventoryItemSlot.layout"
+ Configurations {
+  LayoutResourceClass PC {
+  }
+  LayoutResourceClass XBOX_ONE : PC {
+  }
+  LayoutResourceClass XBOX_SERIES : PC {
+  }
+  LayoutResourceClass PS4 : PC {
+  }
+  LayoutResourceClass PS5 : PC {
+  }
+  LayoutResourceClass HEADLESS : PC {
+  }
+ }
+}

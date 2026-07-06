@@ -1,0 +1,20 @@
+FrameWidgetClass {
+ {
+  OverlayWidgetClass "{60DCC8DF2787CD32}" {
+   Prefab "{60DCC8DF2787CD32}"
+   {
+    FrameWidgetClass "{69CABA80B84579DA}" : "{083507500BD3D187}UI/layouts/Menus/Inventory/RGmoneyText.layout" {
+     Name "RGmoneyFrame"
+     Slot OverlayWidgetSlot "{69CABA80868F2CD7}" {
+     }
+     {
+      TextWidgetClass "{69CABA81431873F1}" {
+       Prefab "{69CABA81431873F1}"
+       Text "0$"
+      }
+     }
+    }
+   }
+  }
+ }
+}

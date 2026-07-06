@@ -1,0 +1,125 @@
+GenericEntity {
+ ID "69BC8A7711A4B160"
+ components {
+  MeshObject "{69BC8A7711A4B169}" {
+   Object "{56326B665211D386}Assets/Props/Military/AmmoBox/ArsenalBox_01/ArsenalBox_01.xob"
+  }
+  RG_ShopComponent "{69BCA7D7EBA7BBA5}" {
+  }
+  RigidBody "{69BC8A7711A4B171}" {
+   Mass 10
+   ModelGeometry 1
+   Static 1
+  }
+  SCR_ArsenalComponent "{69BC8A7711A4B172}" {
+   m_eSupportedArsenalItemTypes 2097150
+   m_eSupportedArsenalItemModes 254
+   m_eEditableAttributeGroups 30
+   m_OverwriteArsenalConfig SCR_ArsenalItemListConfig "{69BCA7C1FD989A56}" : "{79EFDF995D0E0D55}weapons.conf" {
+   }
+   m_eArsenalSaveType FACTION_ITEMS_ONLY
+  }
+  SCR_ResourceComponent "{69BC8A7711A4B179}" {
+   m_aConsumers {
+    SCR_ResourceConsumerServicePoint "{5E5AE189C57A9FD7}" : "{E1B1527D021F6D70}Configs/Resources/Supplies/Consumers/Specific/Consumer_Arsenal.conf" {
+     m_fResourceRange 185
+    }
+   }
+   m_aGenerators {
+    SCR_ResourceGeneratorServicePoint "{5E5ECCF59701966C}" : "{533DCE4784CCA188}Configs/Resources/Supplies/Generators/Specific/Generator_Arsenal.conf" {
+    }
+   }
+  }
+  SCR_SoundDataComponent "{69BC8A7711A4B146}" {
+   m_aAudioSourceConfiguration {
+    SCR_AudioSourceConfiguration "{69BC8A7711A4B143}" {
+     m_sSoundProject "{A73D28179B395F19}Sounds/Props/Military/AmmoBoxes/AmmoBox_Big_Wooden/Props_AmmoBox_Big_Wooden.acp"
+     m_sSoundEventName "SOUND_CONTAINER_OPEN"
+    }
+    SCR_AudioSourceConfiguration "{69BC8A7711A4B142}" {
+     m_sSoundProject "{A73D28179B395F19}Sounds/Props/Military/AmmoBoxes/AmmoBox_Big_Wooden/Props_AmmoBox_Big_Wooden.acp"
+     m_sSoundEventName "SOUND_CONTAINER_CLOSE"
+    }
+   }
+  }
+  UniversalInventoryStorageComponent "{69BC8A7711A4B14D}" {
+   Attributes SCR_ItemAttributeCollection "{69BC8A7711A4B14F}" {
+    ItemDisplayName SCR_InventoryUIInfo "{69BC8A7711A4B149}" {
+     Name "#AR-Arsenal_Name"
+     Description "#AR-Arsenal_Description"
+     m_aItemHints {
+      SCR_SupplyAvailableItemHintUIInfo "{5E76A7E614C745B3}" : "{B7797523D7C78623}Configs/Inventory/ItemHints/SupplyAvailable_ItemHint.conf" {
+      }
+     }
+    }
+    ItemPhysAttributes ItemPhysicalAttributes "{69BC8A7711A4B0F8}" {
+     Weight 5
+     DimensionScaler 0.9
+    }
+    CustomAttributes {
+     PreviewRenderAttributes "{69BC8A7711A4B0C5}" {
+      CameraOrbitAngles 330 30 0
+      CameraDistanceToItem 2
+      CameraOffset 0 0 0
+     }
+    }
+    m_Size SLOT_2x2
+    m_SlotType SLOT_LOADOUT_STORAGE
+    m_bDraggable 0
+   }
+   Priority 1000
+  }
+  SCR_ArsenalInventoryStorageManagerComponent "{69BC8A7711A4B0C6}" {
+  }
+  ActionsManagerComponent "{69BC8A7711A4B0C1}" {
+   Enabled 1
+   ActionContexts {
+    UserActionContext "{69BC8A7711A4B0C2}" {
+     ContextName "default"
+     Position PointInfo "{69BC8A7711A4B0CC}" {
+      Offset 0 0.464 0
+     }
+     Radius 1.5
+    }
+   }
+   additionalActions {
+    SCR_OpenStorageAction "{69BC8A7711A4B0C9}" {
+     ParentContextList {
+      "default"
+     }
+     UIInfo UIInfo "{69BC8A7711A4B0C8}" {
+      Name "#AR-Inventory_OpenArsenalStorage"
+     }
+    }
+    SCR_SaveArsenalLoadout "{69BC8A7711A4B0CB}" {
+     ParentContextList {
+      "default"
+     }
+     UIInfo UIInfo "{69BC8A7711A4B0CA}" {
+      Name "#AR-Loadout_Action_SaveLoadout"
+     }
+     Duration 1
+     "Sort Priority" 10
+    }
+    SCR_ResupplySelfSupportStationAction "{5E22CEC8BA1D1393}" : "{11F44ADB0B72715F}Configs/Actions/SupportStationActions/Resupply/ArsenalBox/ResupplyAction_HeldWeapon.conf" {
+    }
+    SCR_ResupplySelfSupportStationAction "{5E22CEC8B8EFB9D4}" : "{6CA483DDD400F6FA}Configs/Actions/SupportStationActions/Resupply/ArsenalBox/ResupplyAction_HeldUnderBarrel.conf" {
+    }
+    SCR_ResupplySelfSupportStationAction "{5E22CEC8A6B3812D}" : "{539BA03C501F3C63}Configs/Actions/SupportStationActions/Resupply/ArsenalBox/ResupplyAction_Grenade.conf" {
+    }
+    SCR_ResupplySelfSupportStationAction "{5E22CEC8A5C1BB2C}" : "{E976EE8F9F17FF15}Configs/Actions/SupportStationActions/Resupply/ArsenalBox/ResupplyAction_Morphine.conf" {
+    }
+    SCR_ResupplySelfSupportStationAction "{5E22CEC8A4F18CD6}" : "{367047A0B7C6A2B1}Configs/Actions/SupportStationActions/Resupply/ArsenalBox/ResupplyAction_Bandage.conf" {
+    }
+   }
+  }
+  RplComponent "{69BC8A7711A4B0D6}" {
+   Enabled 1
+   "Rpl State Override" Runtime
+  }
+  Hierarchy "{69BC8A7711A4B0D8}" {
+   Enabled 1
+  }
+ }
+ Flags 0x403 0
+}
