@@ -1,0 +1,9 @@
+GenericEntity {
+ ID "69CD598921A91ADE"
+ components {
+  MyWorldManagerComponent "{69CD59893D98E053}" {
+   m_sConfig "{79EFDF995D0E0D55}weapons.conf"
+  }
+ }
+ coords 125.894 1 131.616
+}

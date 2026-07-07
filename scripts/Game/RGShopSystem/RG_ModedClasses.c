@@ -1,3 +1,14 @@
+[BaseContainerProps(configRoot: true), BaseContainerCustomCheckIntTitleField("m_bEnabled", "Arsenal Data", "DISABLED - Arsenal Data", 1)]
+modded class SCR_ArsenalItem
+{
+	[Attribute("10", desc: "", params: "0 inf 1")]
+	protected int m_SellValue;
+	int GetSellValue()
+	{
+		return m_SellValue;
+	}
+}
+
 modded class SCR_ArsenalInventorySlotUI
 {
 	override string SetSlotSize()
@@ -47,51 +58,33 @@ modded class SCR_ArsenalInventorySlotUI
 	}
 	override float GetTotalResources()
 	{
-		if (!IsShop())
-			return super.GetTotalResources();
-	
-		SCR_ArsenalManagerComponent arsenalManager;
-		SCR_ArsenalManagerComponent.GetArsenalManager(arsenalManager);
-	
-		Resource itemResource = Resource.Load(m_pItem.GetOwner().GetPrefabData().GetPrefabName());
-		if (!itemResource)
-			return super.GetTotalResources();
-	
-		IEntity storageEntity = GetStorageUI().GetCurrentNavigationStorage().GetOwner();
-		if (!storageEntity)
-			return super.GetTotalResources();
-	
-		SCR_ArsenalComponent arsenalComponent = SCR_ArsenalComponent.Cast(storageEntity.FindComponent(SCR_ArsenalComponent));
-		if (!arsenalComponent)
-			return super.GetTotalResources();
-	
-		SCR_ArsenalItemListConfig arsenalConfig = arsenalComponent.GetOverwriteArsenalConfig();
-		if (!arsenalConfig)
-			return super.GetTotalResources();
-	
-		array<ref SCR_ArsenalItemStandalone> arsenalItems = {};
-		if (!arsenalConfig.GetArsenalItems(arsenalItems))
-			return super.GetTotalResources();
-	
-		ResourceName targetResource = itemResource.GetResource().GetResourceName();
-	
-		foreach (SCR_ArsenalItemStandalone item : arsenalItems)
+		
+		if (IsShop())
 		{
-			if (!item)
-				continue;
+			m_fSupplyCost = 0;
+			MyWorldManagerComponent manager = MyWorldManagerComponent.GetInstance();
+			
+			Resource itemResource = Resource.Load(m_pItem.GetOwner().GetPrefabData().GetPrefabName());
+			ResourceName targetResource = itemResource.GetResource().GetResourceName();
 	
-			Resource resource = item.GetItemResource();
-			if (!resource)
-				continue;
-	
-			if (resource.GetResource().GetResourceName() != targetResource)
-				continue;
-	
-			int supplyCost = item.GetSupplyCost(SCR_EArsenalSupplyCostType.DEFAULT, false);
-			m_fSupplyCost = supplyCost;
-			return supplyCost;
+			foreach (SCR_ArsenalItemStandalone item : manager.arsenalItems)
+			{
+				if (!item)
+					continue;
+		
+				Resource resource = item.GetItemResource();
+				
+				if (!resource)
+					continue;
+		
+				if (resource.GetResource().GetResourceName() != targetResource)
+					continue;
+		
+				m_fSupplyCost = item.GetSupplyCost(SCR_EArsenalSupplyCostType.DEFAULT, false);
+				return m_fSupplyCost;
+				
+			}
 		}
-	
 		return super.GetTotalResources();
 	}
 
@@ -108,17 +101,18 @@ modded class SCR_ArsenalInventorySlotUI
 		super.UpdateTotalResources(totalResources);
 	}
 }
+
 modded class SCR_InventoryMenuUI
 {	
 	protected bool m_pToShop;
 	protected bool m_pFromShop;
-	protected SCR_ArsenalItemListConfig config;
-	array<ref SCR_ArsenalItemStandalone> arsenalItemsGG;
-	
+
 	override void ShowItemInfo( string sName = "", string sDescr = "", float sWeight = 0.0, SCR_InventoryUIInfo uiInfo = null )
 	{
+		MyWorldManagerComponent manager = MyWorldManagerComponent.GetInstance();
 		ResourceName targetResource = m_pFocusedSlotUI.GetItemResource();
-		foreach (SCR_ArsenalItemStandalone item : arsenalItemsGG)
+		Print(targetResource);
+		foreach (SCR_ArsenalItemStandalone item :  manager.arsenalItems)
 		{
 			if (!item)
 				continue;
@@ -182,7 +176,7 @@ modded class SCR_InventoryMenuUI
 
 		UpdateItemInfoPosition();
 	}
-	
+
 	protected bool IsShop()
 	{
 		IEntity entityShop;
@@ -198,13 +192,19 @@ modded class SCR_InventoryMenuUI
 		else
 		{
 			SCR_InventorySlotUI lastFocus = m_pActiveHoveredStorageUI.GetLastFocusedSlot();
-			entityShop = SCR_ArsenalInventorySlotUI.Cast(lastFocus).GetArsenalResourceComponent().GetOwner();
+			SCR_ResourceComponent res;
+			SCR_ArsenalInventorySlotUI arsenalSlot;
+			if(lastFocus)
+				arsenalSlot = SCR_ArsenalInventorySlotUI.Cast(lastFocus);
+			if(arsenalSlot)
+				res = arsenalSlot.GetArsenalResourceComponent();
+			if(res)
+				entityShop = res.GetOwner();
 			m_pToShop = true;
 			m_pFromShop = false;
 		}
-
-	
-		shopComponent = RG_ShopComponent.Cast(entityShop.FindComponent(RG_ShopComponent));
+		if(entityShop)
+			shopComponent = RG_ShopComponent.Cast(entityShop.FindComponent(RG_ShopComponent));
 		if(shopComponent)
 		{
 			return true;
@@ -227,9 +227,13 @@ modded class SCR_InventoryMenuUI
 			if(!currentStorage)
 				return false;
 			IEntity storageEntity = currentStorage.GetOwner();
-			RG_ShopComponent shopComponent = RG_ShopComponent.Cast(storageEntity.FindComponent(RG_ShopComponent));
-			if(shopComponent)
-				return false;
+			if(m_pFromShop)
+			{
+				RG_ShopComponent shopComponent = RG_ShopComponent.Cast(storageEntity.FindComponent(RG_ShopComponent));
+				if(shopComponent)
+					return false;
+			}
+
 			canInsert = m_InventoryManager.CanInsertItemInActualStorage(m_pSelectedSlotUI.GetInventoryItemComponent().GetOwner(),currentStorage,-1);
 		}
 		else
@@ -257,16 +261,28 @@ modded class SCR_InventoryMenuUI
 	
 	protected bool ShopDeal()
 	{
-		SCR_ArsenalInventorySlotUI item = SCR_ArsenalInventorySlotUI.Cast(m_pFocusedSlotUI);
+		SCR_InventorySlotUI item = SCR_InventorySlotUI.Cast(m_DraggedSlot);
 		if(!item)
-			item = SCR_ArsenalInventorySlotUI.Cast(m_pSelectedSlotUI);
+			item = SCR_InventorySlotUI.Cast(m_pFocusedSlotUI);
+		
 		RG_MoneyComponent moneyComp = RG_MoneyComponent.Cast(m_Player.FindComponent(RG_MoneyComponent));
 		int playerMoneyValue = moneyComp.money;
 		bool dealError = false;
-		
+		BaseInventoryStorageComponent aa = item.GetAsStorage();
+		array<IEntity> attachments = {};
+		aa.GetAll(attachments);
+		Print(attachments);
+		InventoryItemComponent ia = item.GetInventoryItemComponent();
+		IEntity as = ia.GetOwner();
+		EntityPrefabData a1a = as.GetPrefabData();
+		BaseContainer daf = a1a.GetPrefab();
+		BaseContainer ad = daf.GetAncestor();
+		Print(daf.GetName());
+		Print(ad.GetName());
 		if(m_pFromShop)
 		{
-			int itemPrice = item.GetItemSupplyCost();
+			SCR_ArsenalInventorySlotUI arItem = SCR_ArsenalInventorySlotUI.Cast(item);
+			int itemPrice = arItem.GetItemSupplyCost();
 			int result = playerMoneyValue - itemPrice;
 			if(result >= 0)
 				moneyComp.SetMoney(result);		
@@ -275,6 +291,40 @@ modded class SCR_InventoryMenuUI
 		}
 		if(m_pToShop)
 		{
+			MyWorldManagerComponent manager = MyWorldManagerComponent.GetInstance();
+			ResourceName targetResource = item.GetItemResource();
+			int sellPrice = 0;
+			foreach (SCR_ArsenalItemStandalone itemS :  manager.arsenalItems)
+			{
+				if (!itemS)
+					continue;
+				
+				Resource resource = itemS.GetItemResource();
+				
+				if (!resource)
+					continue;
+		
+				if (resource.GetResource().GetResourceName() != targetResource)
+					continue;
+		
+				sellPrice = itemS.GetSellValue();
+				
+				if(sellPrice == 0)
+				{
+					int supplyCost = itemS.GetSupplyCost(SCR_EArsenalSupplyCostType.DEFAULT, false);
+					sellPrice = supplyCost / 2;
+					
+				}			
+			}
+			if(sellPrice != 0)
+			{
+				int result = playerMoneyValue + sellPrice;
+				moneyComp.SetMoney(result);		
+			}
+			else
+				dealError = true;
+			 
+			
 		}
 		if(dealError)
 		{
@@ -290,7 +340,9 @@ modded class SCR_InventoryMenuUI
 		if (IsShop() && CanInsertItem(true))
 		{	
 			if(ShopDeal())
+			{
 				super.Action_Drop();
+			}
 			return;
 		}
 	
@@ -335,8 +387,13 @@ modded class SCR_InventoryMenuUI
 	{
 		if(MoveToVicinityIsShop())
 		{
-			Print("da");
-			return false;//если его нету в списке продаж для этого магаза 
+			m_pToShop = true;
+			m_pFromShop = false;
+			if(ShopDeal())
+				return super.MoveBetweenToVicinity_VirtualArsenal();
+			else
+				return false;
+
 		}
 		return super.MoveBetweenToVicinity_VirtualArsenal();
 	}
@@ -349,21 +406,11 @@ modded class SCR_InventoryMenuUI
 		moneyText.SetText(moneyFormat);
 		
 	}
-	void SetConfig()
-	{
-		RG_MoneyComponent moneyComp = RG_MoneyComponent.Cast(m_Player.FindComponent(RG_MoneyComponent));
-		config = moneyComp.getConfig();
-
-		config.GetArsenalItems(arsenalItemsGG);
-		
-		
-	}
 
 	override void OnMenuOpen()
 	{
 		super.OnMenuOpen();
 		SetMoneyText();
-		SetConfig();
 	}
 
 }
