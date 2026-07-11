@@ -11,25 +11,11 @@ class RG_ShopPriceService
 
 	protected static SCR_ArsenalItemStandalone FindItemByPath(string resourcePath)
 	{
-		MyWorldManagerComponent manager = MyWorldManagerComponent.GetInstance();
+		RG_ShopManagerComponent manager = RG_ShopManagerComponent.GetInstance();
 		if (!manager)
 			return null;
 
-		foreach (SCR_ArsenalItemStandalone item : manager.arsenalItems)
-		{
-			if (!item)
-				continue;
-
-			Resource resource = item.GetItemResource();
-			if (!resource)
-				continue;
-
-			ResourceName configuredResourceName = resource.GetResource().GetResourceName();
-			if (configuredResourceName.GetPath() == resourcePath)
-				return item;
-		}
-
-		return null;
+		return manager.GetItemByPath(resourcePath);
 	}
 
 	static int GetBuyPrice(ResourceName resourceName)
@@ -83,11 +69,18 @@ class RG_ShopPriceService
 		if (!itemComponent)
 			return 0;
 
-		IEntity itemEntity = itemComponent.GetOwner();
+		return GetEntitySellPriceWithAttachments(itemComponent.GetOwner());
+	}
+
+	static int GetEntitySellPriceWithAttachments(IEntity itemEntity)
+	{
+		if (!itemEntity)
+			return 0;
+
 		int basePrice = GetBaseEntitySellPrice(itemEntity);
 		int attachmentsPrice = 0;
 
-		BaseInventoryStorageComponent itemStorage = slot.GetAsStorage();
+		BaseInventoryStorageComponent itemStorage = BaseInventoryStorageComponent.Cast(itemEntity.FindComponent(BaseInventoryStorageComponent));
 		if (itemStorage)
 		{
 			array<IEntity> attachments = {};
@@ -101,6 +94,27 @@ class RG_ShopPriceService
 		}
 
 		int totalPrice = basePrice + attachmentsPrice;
+		return totalPrice;
+	}
+
+	static int GetEntitySellPriceWithAttachmentsForShop(IEntity itemEntity, RG_ShopComponent shop)
+	{
+		if (!itemEntity || !shop || !shop.IsEntityAvailable(itemEntity))
+			return 0;
+
+		int totalPrice = GetBaseEntitySellPrice(itemEntity);
+		BaseInventoryStorageComponent itemStorage = BaseInventoryStorageComponent.Cast(itemEntity.FindComponent(BaseInventoryStorageComponent));
+		if (!itemStorage)
+			return totalPrice;
+
+		array<IEntity> attachments = {};
+		itemStorage.GetAll(attachments);
+		foreach (IEntity attachment : attachments)
+		{
+			if (shop.IsEntityAvailable(attachment))
+				totalPrice += GetBaseEntitySellPrice(attachment);
+		}
+
 		return totalPrice;
 	}
 

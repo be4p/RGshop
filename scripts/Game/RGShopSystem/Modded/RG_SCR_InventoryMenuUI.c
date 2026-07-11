@@ -162,78 +162,89 @@ modded class SCR_InventoryMenuUI
 		return canInsert;
 	}
 	
-	protected bool ShopDeal()
+	protected SCR_ResourcePlayerControllerInventoryComponent GetShopInventoryRpcComponent()
 	{
-		if (m_eShopDealDirection == RG_EShopDealDirection.NONE)
-			return false;
+		PlayerController playerController = GetGame().GetPlayerController();
+		if (!playerController)
+			return null;
 
-		SCR_InventorySlotUI item = SCR_InventorySlotUI.Cast(m_DraggedSlot);
-		if(!item)
-			item = SCR_InventorySlotUI.Cast(m_pFocusedSlotUI);
-		if (!item || !m_Player)
-			return false;
-		
-		RG_MoneyComponent moneyComp = RG_MoneyComponent.Cast(m_Player.FindComponent(RG_MoneyComponent));
-		if (!moneyComp)
-			return false;
-
-		int playerMoneyValue = moneyComp.GetMoney();
-		bool dealError = false;
-		if(m_eShopDealDirection == RG_EShopDealDirection.BUY)
-		{
-			SCR_ArsenalInventorySlotUI arItem = SCR_ArsenalInventorySlotUI.Cast(item);
-			if (!arItem)
-				return false;
-
-			int itemPrice = arItem.GetItemSupplyCost();
-			int result = playerMoneyValue - itemPrice;
-			if(result >= 0)
-				moneyComp.SetMoney(result);		
-			else
-				dealError = true;
-		}
-		if(m_eShopDealDirection == RG_EShopDealDirection.SELL)
-		{
-			int sellPrice = RG_ShopPriceService.GetItemSellPriceWithAttachments(item);
-			if(sellPrice != 0)
-			{
-				int result = playerMoneyValue + sellPrice;
-				moneyComp.SetMoney(result);		
-			}
-			else
-				dealError = true;
-			 
-			
-		}
-		if(dealError)
-		{
-			SCR_UISoundEntity.SoundEvent(SCR_SoundEvent.SOUND_INV_DROP_ERROR);
-			return false; 
-		}
-		SetMoneyText();
-		return true; 
+		return SCR_ResourcePlayerControllerInventoryComponent.Cast(playerController.FindComponent(SCR_ResourcePlayerControllerInventoryComponent));
 	}
+
+	protected BaseInventoryStorageComponent GetOpenShopStorage()
+	{
+		BaseInventoryStorageComponent storage;
+		if (m_pStorageLootUI)
+			storage = m_pStorageLootUI.GetCurrentNavigationStorage();
+
+		if (!storage && m_aOpenedStoragesUI)
+			storage = GetOpenArsenalStorage();
+
+		if (!storage || !storage.GetOwner() || !storage.GetOwner().FindComponent(RG_ShopComponent))
+			return null;
+
+		return storage;
+	}
+
+	protected bool RequestShopBuy(SCR_ArsenalInventorySlotUI arsenalSlot, BaseInventoryStorageComponent storageTo)
+	{
+		if (!arsenalSlot || !storageTo)
+			return false;
+
+		IEntity arsenalEntity = SCR_InventoryStorageBaseUI.ARSENAL_SLOT_STORAGES.Get(arsenalSlot);
+		SCR_ResourceComponent resourceComponent = SCR_ResourceComponent.FindResourceComponent(arsenalEntity);
+		SCR_ResourcePlayerControllerInventoryComponent rpcComponent = GetShopInventoryRpcComponent();
+		if (!resourceComponent || !rpcComponent)
+			return false;
+
+		rpcComponent.RpcAsk_RGShopRequestItem(Replication.FindItemId(resourceComponent), Replication.FindItemId(storageTo), arsenalSlot.GetItemResource());
+		return true;
+	}
+
+	protected bool RequestShopSell(SCR_InventorySlotUI itemSlot, BaseInventoryStorageComponent shopStorage)
+	{
+		if (!itemSlot || !shopStorage)
+			return false;
+
+		InventoryItemComponent itemComponent = itemSlot.GetInventoryItemComponent();
+		SCR_ResourceComponent resourceComponent = SCR_ResourceComponent.FindResourceComponent(shopStorage.GetOwner());
+		SCR_ResourcePlayerControllerInventoryComponent rpcComponent = GetShopInventoryRpcComponent();
+		if (!itemComponent || !resourceComponent || !rpcComponent)
+			return false;
+
+		rpcComponent.RpcAsk_RGShopSellItem(Replication.FindItemId(resourceComponent), Replication.FindItemId(itemComponent));
+		return true;
+	}
+
 	override protected void Action_Drop()
 	{
-
-		if (IsShop() && CanInsertItem(true))
-		{	
-			if(ShopDeal())
-			{
-				super.Action_Drop();
-			}
+		if (!IsShop() || !CanInsertItem(true))
+		{
+			super.Action_Drop();
 			return;
 		}
-	
-		super.Action_Drop();
+
+		if (m_eShopDealDirection == RG_EShopDealDirection.BUY)
+		{
+			MoveBetweenFromVicinity();
+		}
+		else if (m_eShopDealDirection == RG_EShopDealDirection.SELL)
+		{
+			MoveBetweenToVicinity_VirtualArsenal();
+		}
+
+		ResetHighlightsOnAvailableStorages();
 	}
+
 	override protected void MoveBetweenFromVicinity()
 	{
 		if (IsShop() &&  CanInsertItem(false))
 		{
 			m_eShopDealDirection = RG_EShopDealDirection.BUY;
-			if(ShopDeal())
-				super.MoveBetweenFromVicinity();
+			SCR_ArsenalInventorySlotUI arsenalSlot = SCR_ArsenalInventorySlotUI.Cast(m_pSelectedSlotUI);
+			InventoryItemComponent itemComponent = arsenalSlot.GetInventoryItemComponent();
+			BaseInventoryStorageComponent storageTo = m_InventoryManager.FindStorageForItem(itemComponent.GetOwner(), EStoragePurpose.PURPOSE_ANY);
+			RequestShopBuy(arsenalSlot, storageTo);
 			return;
 		}
 		super.MoveBetweenFromVicinity();
@@ -266,11 +277,8 @@ modded class SCR_InventoryMenuUI
 		if(MoveToVicinityIsShop())
 		{
 			m_eShopDealDirection = RG_EShopDealDirection.SELL;
-			if(ShopDeal())
-				return super.MoveBetweenToVicinity_VirtualArsenal();
-			else
-				return false;
-
+			RequestShopSell(SCR_InventorySlotUI.Cast(m_pSelectedSlotUI), GetOpenShopStorage());
+			return true;
 		}
 		return super.MoveBetweenToVicinity_VirtualArsenal();
 	}
@@ -289,9 +297,16 @@ modded class SCR_InventoryMenuUI
 	override void OnMenuOpen()
 	{
 		super.OnMenuOpen();
+		RG_MoneyComponent.GetOnMoneyChanged().Insert(SetMoneyText);
 		SetMoneyText();
 		m_SellPriceUIInfo = RG_PriceItemHintUIInfo.Cast(SCR_BaseContainerTools.CreateInstanceFromPrefab(m_sSellPriceUIInfoPrefab));
 		m_BuyPriceUIInfo = RG_PriceItemHintUIInfo.Cast(SCR_BaseContainerTools.CreateInstanceFromPrefab(m_sBuyPriceUIInfoPrefab));
+	}
+
+	override void OnMenuClose()
+	{
+		RG_MoneyComponent.GetOnMoneyChanged().Remove(SetMoneyText);
+		super.OnMenuClose();
 	}
 
 }

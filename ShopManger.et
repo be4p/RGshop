@@ -1,7 +1,7 @@
 GenericEntity {
  ID "69CD598921A91ADE"
  components {
-  MyWorldManagerComponent "{69CD59893D98E053}" {
+  RG_ShopManagerComponent "{69D681289052327B}" {
    m_sConfig "{79EFDF995D0E0D55}weapons.conf"
   }
  }

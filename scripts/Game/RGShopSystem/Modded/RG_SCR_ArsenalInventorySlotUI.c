@@ -45,6 +45,19 @@ modded class SCR_ArsenalInventorySlotUI
 		return RG_ShopComponent.Cast(storageEntity.FindComponent(RG_ShopComponent)) != null;
 	}
 
+	RG_ShopComponent GetShopComponent()
+	{
+		SCR_InventoryStorageBaseUI storageUI = GetStorageUI();
+		if (!storageUI)
+			return null;
+
+		BaseInventoryStorageComponent storage = storageUI.GetCurrentNavigationStorage();
+		if (!storage || !storage.GetOwner())
+			return null;
+
+		return RG_ShopComponent.Cast(storage.GetOwner().FindComponent(RG_ShopComponent));
+	}
+
 	override float GetTotalResources()
 	{
 		if (!IsShop())
@@ -57,7 +70,11 @@ modded class SCR_ArsenalInventorySlotUI
 		if (!prefabData)
 			return 0;
 
-		m_fSupplyCost = RG_ShopPriceService.GetBuyPrice(prefabData.GetPrefabName());
+		RG_ShopComponent shop = GetShopComponent();
+		if (!shop)
+			return 0;
+
+		m_fSupplyCost = shop.GetBuyPrice(prefabData.GetPrefabName());
 		return m_fSupplyCost;
 	}
 

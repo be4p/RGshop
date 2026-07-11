@@ -2,7 +2,7 @@ SCR_ChimeraCharacter {
  ID "520EC961A090B1EE"
  components {
   RG_MoneyComponent "{69B4BD7BB92CDF0C}" {
-   m_sConfig "{79EFDF995D0E0D55}weapons.conf"
+   m_iStartingMoney 50
   }
  }
 }
