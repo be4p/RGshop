@@ -77,45 +77,96 @@ class RG_ShopPriceService
 		if (!itemEntity)
 			return 0;
 
-		int basePrice = GetBaseEntitySellPrice(itemEntity);
-		int attachmentsPrice = 0;
-
-		BaseInventoryStorageComponent itemStorage = BaseInventoryStorageComponent.Cast(itemEntity.FindComponent(BaseInventoryStorageComponent));
-		if (itemStorage)
+		int totalPrice = GetBaseEntitySellPrice(itemEntity);
+		array<BaseInventoryStorageComponent> storages = {};
+		GetEntityStorages(itemEntity, storages);
+		foreach (BaseInventoryStorageComponent storage : storages)
 		{
-			array<IEntity> attachments = {};
-			itemStorage.GetAll(attachments);
-
-			foreach (IEntity attachment : attachments)
+			array<IEntity> containedItems = {};
+			storage.GetAll(containedItems);
+			foreach (IEntity containedItem : containedItems)
 			{
-				int attachmentPrice = GetBaseEntitySellPrice(attachment);
-				attachmentsPrice += attachmentPrice;
+				if (!IsDirectlyInsideStorage(containedItem, storage))
+					continue;
+
+				totalPrice += GetEntitySellPriceWithAttachments(containedItem);
 			}
 		}
 
-		int totalPrice = basePrice + attachmentsPrice;
 		return totalPrice;
 	}
 
 	static int GetEntitySellPriceWithAttachmentsForShop(IEntity itemEntity, RG_ShopComponent shop)
 	{
-		if (!itemEntity || !shop || !shop.IsEntityAvailable(itemEntity))
+		if (!itemEntity || !shop)
 			return 0;
 
-		int totalPrice = GetBaseEntitySellPrice(itemEntity);
-		BaseInventoryStorageComponent itemStorage = BaseInventoryStorageComponent.Cast(itemEntity.FindComponent(BaseInventoryStorageComponent));
-		if (!itemStorage)
-			return totalPrice;
-
-		array<IEntity> attachments = {};
-		itemStorage.GetAll(attachments);
-		foreach (IEntity attachment : attachments)
+		if (!shop.IsEntityAvailable(itemEntity))
 		{
-			if (shop.IsEntityAvailable(attachment))
-				totalPrice += GetBaseEntitySellPrice(attachment);
+			int contentsPrice;
+			array<BaseInventoryStorageComponent> containerStorages = {};
+			GetEntityStorages(itemEntity, containerStorages);
+			foreach (BaseInventoryStorageComponent containerStorage : containerStorages)
+			{
+				array<IEntity> containedItems = {};
+				containerStorage.GetAll(containedItems);
+				foreach (IEntity containedItem : containedItems)
+				{
+					if (!IsDirectlyInsideStorage(containedItem, containerStorage))
+						continue;
+
+					contentsPrice += GetEntitySellPriceWithAttachmentsForShop(containedItem, shop);
+				}
+			}
+
+			return contentsPrice;
+		}
+
+		int totalPrice = GetBaseEntitySellPrice(itemEntity);
+		array<BaseInventoryStorageComponent> itemStorages = {};
+		GetEntityStorages(itemEntity, itemStorages);
+		foreach (BaseInventoryStorageComponent itemStorage : itemStorages)
+		{
+			array<IEntity> attachments = {};
+			itemStorage.GetAll(attachments);
+			foreach (IEntity attachment : attachments)
+			{
+				if (!IsDirectlyInsideStorage(attachment, itemStorage) || !shop.IsEntityAvailable(attachment))
+					continue;
+
+				totalPrice += GetEntitySellPriceWithAttachmentsForShop(attachment, shop);
+			}
 		}
 
 		return totalPrice;
+	}
+
+	static void GetEntityStorages(IEntity entity, out notnull array<BaseInventoryStorageComponent> storages)
+	{
+		if (!entity)
+			return;
+
+		array<Managed> components = {};
+		entity.FindComponents(BaseInventoryStorageComponent, components);
+		foreach (Managed component : components)
+		{
+			BaseInventoryStorageComponent storage = BaseInventoryStorageComponent.Cast(component);
+			if (storage)
+				storages.Insert(storage);
+		}
+	}
+
+	protected static bool IsDirectlyInsideStorage(IEntity item, BaseInventoryStorageComponent storage)
+	{
+		if (!item || !storage)
+			return false;
+
+		InventoryItemComponent itemComponent = InventoryItemComponent.Cast(item.FindComponent(InventoryItemComponent));
+		if (!itemComponent)
+			return false;
+
+		InventoryStorageSlot parentSlot = itemComponent.GetParentSlot();
+		return parentSlot && parentSlot.GetStorage() == storage;
 	}
 
 	protected static int GetConfiguredSellPrice(SCR_ArsenalItemStandalone item)

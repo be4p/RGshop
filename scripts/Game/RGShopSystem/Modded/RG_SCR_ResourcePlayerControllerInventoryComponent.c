@@ -105,10 +105,6 @@ modded class SCR_ResourcePlayerControllerInventoryComponent
 		if (!shopComponent)
 			return;
 
-		SCR_ItemAttributeCollection attributes = SCR_ItemAttributeCollection.Cast(itemComponent.GetAttributes());
-		if (!attributes || !attributes.IsRefundable())
-			return;
-
 		IEntity itemParent = itemEntity;
 		while (itemParent)
 		{
@@ -127,7 +123,7 @@ modded class SCR_ResourcePlayerControllerInventoryComponent
 		if (!itemParent && vector.DistanceSq(seller.GetOrigin(), itemEntity.GetOrigin()) > MAX_REFUNDING_DISTANCE_SQ)
 			return;
 
-		InventoryStorageManagerComponent sellerInventoryManager = seller.GetCharacterController().GetInventoryStorageManager();
+		SCR_InventoryStorageManagerComponent sellerInventoryManager = SCR_InventoryStorageManagerComponent.Cast(seller.GetCharacterController().GetInventoryStorageManager());
 		if (!sellerInventoryManager || !sellerInventoryManager.ValidateStorageRequest(shopEntity))
 			return;
 
@@ -138,12 +134,26 @@ modded class SCR_ResourcePlayerControllerInventoryComponent
 		if (!arsenalComponent)
 			return;
 
-		int sellPrice = RG_ShopPriceService.GetEntitySellPriceWithAttachmentsForShop(itemEntity, shopComponent);
-		if (sellPrice <= 0)
-			return;
-
 		RG_MoneyComponent moneyComponent = RG_MoneyComponent.Cast(seller.FindComponent(RG_MoneyComponent));
 		if (!moneyComponent)
+			return;
+
+		if (!shopComponent.IsEntityAvailable(itemEntity))
+		{
+			int contentsSellPrice = RG_SellAcceptedContentsRecursive(itemEntity, shopComponent, arsenalComponent, sellerInventoryManager);
+
+			if (contentsSellPrice > 0)
+				moneyComponent.AddMoney_S(contentsSellPrice);
+
+			return;
+		}
+
+		SCR_ItemAttributeCollection attributes = SCR_ItemAttributeCollection.Cast(itemComponent.GetAttributes());
+		if (!attributes || !attributes.IsRefundable())
+			return;
+
+		int sellPrice = RG_ShopPriceService.GetEntitySellPriceWithAttachmentsForShop(itemEntity, shopComponent);
+		if (sellPrice <= 0)
 			return;
 
 		SCR_ArsenalManagerComponent.OnItemRefunded_S(itemEntity, PlayerController.Cast(GetOwner()), arsenalComponent);
@@ -164,5 +174,53 @@ modded class SCR_ResourcePlayerControllerInventoryComponent
 		}
 
 		moneyComponent.AddMoney_S(sellPrice);
+	}
+
+	protected int RG_SellAcceptedContentsRecursive(IEntity containerEntity, RG_ShopComponent shopComponent, SCR_ArsenalComponent arsenalComponent, SCR_InventoryStorageManagerComponent inventoryManager)
+	{
+		if (!containerEntity || !shopComponent || !arsenalComponent || !inventoryManager)
+			return 0;
+
+		int totalPrice;
+		array<BaseInventoryStorageComponent> containerStorages = {};
+		RG_ShopPriceService.GetEntityStorages(containerEntity, containerStorages);
+		foreach (BaseInventoryStorageComponent containerStorage : containerStorages)
+		{
+			array<IEntity> containedItems = {};
+			containerStorage.GetAll(containedItems);
+			foreach (IEntity containedItem : containedItems)
+			{
+				if (!containedItem)
+					continue;
+
+				InventoryItemComponent containedItemComponent = InventoryItemComponent.Cast(containedItem.FindComponent(InventoryItemComponent));
+				if (!containedItemComponent)
+					continue;
+
+				InventoryStorageSlot parentSlot = containedItemComponent.GetParentSlot();
+				if (!parentSlot || parentSlot.GetStorage() != containerStorage)
+					continue;
+
+				if (!shopComponent.IsEntityAvailable(containedItem))
+				{
+					totalPrice += RG_SellAcceptedContentsRecursive(containedItem, shopComponent, arsenalComponent, inventoryManager);
+					continue;
+				}
+
+				SCR_ItemAttributeCollection attributes = SCR_ItemAttributeCollection.Cast(containedItemComponent.GetAttributes());
+				if (!attributes || !attributes.IsRefundable())
+					continue;
+
+				int itemPrice = RG_ShopPriceService.GetEntitySellPriceWithAttachmentsForShop(containedItem, shopComponent);
+				if (itemPrice <= 0)
+					continue;
+
+				SCR_ArsenalManagerComponent.OnItemRefunded_S(containedItem, PlayerController.Cast(GetOwner()), arsenalComponent);
+				if (inventoryManager.TryDeleteItem(containedItem))
+					totalPrice += itemPrice;
+			}
+		}
+
+		return totalPrice;
 	}
 }

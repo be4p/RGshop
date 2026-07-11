@@ -70,6 +70,9 @@ class RG_ShopComponent: ScriptComponent
 		if (!entity || !entity.GetPrefabData())
 			return false;
 
+		if (GetItem(entity.GetPrefabData().GetPrefabName()))
+			return true;
+
 		BaseContainer prefab = entity.GetPrefabData().GetPrefab();
 		while (prefab)
 		{

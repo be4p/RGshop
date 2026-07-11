@@ -19,6 +19,9 @@ modded class SCR_InventoryMenuUI
 			return 0;
 
 		SCR_InventorySlotUI focusedSlot = SCR_InventorySlotUI.Cast(m_pFocusedSlotUI);
+		if (!focusedSlot)
+			return 0;
+
 		return RG_ShopPriceService.GetItemSellPriceWithAttachments(focusedSlot);
 	}
 	override void GetGeneralItemHintsInfos(out notnull array<SCR_InventoryItemHintUIInfo> hintsInfo)
@@ -110,10 +113,14 @@ modded class SCR_InventoryMenuUI
 		bool canInsert = false;
 		if(dragged)
 		{
-			if (!m_pActiveHoveredStorageUI || !m_pSelectedSlotUI)
+			if (!m_pSelectedSlotUI)
 				return false;
 
-			BaseInventoryStorageComponent currentStorage = m_pActiveHoveredStorageUI.GetCurrentNavigationStorage();
+			InventoryItemComponent selectedItemComponent = m_pSelectedSlotUI.GetInventoryItemComponent();
+			if (!selectedItemComponent || !selectedItemComponent.GetOwner())
+				return false;
+
+			BaseInventoryStorageComponent currentStorage = GetDropTargetStorage(selectedItemComponent.GetOwner());
 			if(!currentStorage)
 				return false;
 			IEntity storageEntity = currentStorage.GetOwner();
@@ -126,10 +133,6 @@ modded class SCR_InventoryMenuUI
 				if(shopComponent)
 					return false;
 			}
-
-			InventoryItemComponent selectedItemComponent = m_pSelectedSlotUI.GetInventoryItemComponent();
-			if (!selectedItemComponent || !selectedItemComponent.GetOwner())
-				return false;
 
 			canInsert = m_InventoryManager.CanInsertItemInActualStorage(selectedItemComponent.GetOwner(), currentStorage, -1);
 		}
@@ -160,6 +163,33 @@ modded class SCR_InventoryMenuUI
 			canInsert = m_InventoryManager.CanInsertItemInStorage(slotEntity, storageTo);
 		}
 		return canInsert;
+	}
+
+	protected BaseInventoryStorageComponent GetDropTargetStorage(IEntity item)
+	{
+		if (m_pFocusedSlotUI)
+		{
+			BaseInventoryStorageComponent focusedItemStorage = m_pFocusedSlotUI.GetAsStorage();
+			if (focusedItemStorage && (!item || m_InventoryManager.CanInsertItemInActualStorage(item, focusedItemStorage, -1)))
+				return focusedItemStorage;
+
+			SCR_InventoryStorageBaseUI focusedStorageUI = m_pFocusedSlotUI.GetStorageUI();
+			if (focusedStorageUI)
+			{
+				BaseInventoryStorageComponent focusedStorage = focusedStorageUI.GetCurrentNavigationStorage();
+				if (focusedStorage && (!item || m_InventoryManager.CanInsertItemInActualStorage(item, focusedStorage, -1)))
+					return focusedStorage;
+			}
+		}
+
+		if (m_pActiveHoveredStorageUI)
+		{
+			BaseInventoryStorageComponent hoveredStorage = m_pActiveHoveredStorageUI.GetCurrentNavigationStorage();
+			if (hoveredStorage && (!item || m_InventoryManager.CanInsertItemInActualStorage(item, hoveredStorage, -1)))
+				return hoveredStorage;
+		}
+
+		return null;
 	}
 	
 	protected SCR_ResourcePlayerControllerInventoryComponent GetShopInventoryRpcComponent()
@@ -218,7 +248,13 @@ modded class SCR_InventoryMenuUI
 
 	override protected void Action_Drop()
 	{
-		if (!IsShop() || !CanInsertItem(true))
+		if (!IsShop())
+		{
+			super.Action_Drop();
+			return;
+		}
+
+		if (m_eShopDealDirection == RG_EShopDealDirection.BUY && !CanInsertItem(true))
 		{
 			super.Action_Drop();
 			return;
@@ -227,7 +263,14 @@ modded class SCR_InventoryMenuUI
 		if (m_eShopDealDirection == RG_EShopDealDirection.BUY)
 		{
 			SCR_ArsenalInventorySlotUI arsenalSlot = SCR_ArsenalInventorySlotUI.Cast(m_pSelectedSlotUI);
-			BaseInventoryStorageComponent storageTo = m_pActiveHoveredStorageUI.GetCurrentNavigationStorage();
+			if (!arsenalSlot)
+				return;
+
+			InventoryItemComponent itemComponent = arsenalSlot.GetInventoryItemComponent();
+			if (!itemComponent || !itemComponent.GetOwner())
+				return;
+
+			BaseInventoryStorageComponent storageTo = GetDropTargetStorage(itemComponent.GetOwner());
 			RequestShopBuy(arsenalSlot, storageTo);
 		}
 		else if (m_eShopDealDirection == RG_EShopDealDirection.SELL)

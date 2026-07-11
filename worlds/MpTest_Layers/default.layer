@@ -1,3 +1,6 @@
+GameEntity : "{4CBDC206FEF9897C}Prefabs/Characters/Vests/Vest_6B3/Vest_6B3.et" {
+ coords 132.746 1 124.177
+}
 Vehicle S105_beige1 : "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beige.et" {
  coords 125.41 1 120.334
  angles 0 -124.509 0
@@ -5,9 +8,16 @@ Vehicle S105_beige1 : "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beig
 GenericEntity : "{5A8A04AB0989C0E6}ShopManger.et" {
  coords 125.374 1 134.505
 }
+GenericEntity : "{705D4C030A30D4A3}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_US_Equipment_NoAffiliation.et" {
+ coords 136.643 1 122.535
+ angles 0 0 0
+}
 GenericEntity : "{8501E99781563FF4}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_Weapons_NoAffiliation.et" {
  coords 134.878 1 121.04
  angles 0 0 0
+}
+GenericEntity : "{9CEA24A1A9CC2675}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_sniper.et" {
+ coords 131.104 1 124.229
 }
 $grp GenericEntity : "{A2D42CEC3FE02340}Prefabs/Props/Military/Arsenal/ArsenalBoxes/ArsenalBox_Base.et" {
  {
@@ -22,4 +32,8 @@ $grp GenericEntity : "{A2D42CEC3FE02340}Prefabs/Props/Military/Arsenal/ArsenalBo
   }
   coords 119.483 1 121.222
  }
+}
+GenericEntity : "{EA1DD6EE6534033A}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_Equipment_NoAffiliation.et" {
+ coords 132.359 1 121.081
+ angles 0 0 0
 }
