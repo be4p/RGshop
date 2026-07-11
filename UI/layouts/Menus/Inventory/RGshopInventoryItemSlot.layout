@@ -1,4 +1,4 @@
-SizeLayoutWidgetClass "{69BCA7EFE4019F41}" : "{AF25F325D2730142}UI/layouts/Menus/Inventory/SupplyInventoryItemSlot.layout" {
+SizeLayoutWidgetClass : "{AF25F325D2730142}UI/layouts/Menus/Inventory/SupplyInventoryItemSlot.layout" {
  {
   OverlayWidgetClass "{613AB59EEB40DCCD}" {
    Prefab "{613AB59EEB40DCCD}"

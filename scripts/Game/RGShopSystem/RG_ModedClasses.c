@@ -106,12 +106,13 @@ modded class SCR_InventoryMenuUI
 {	
 	protected bool m_pToShop;
 	protected bool m_pFromShop;
+	const protected ResourceName m_sPriceUIInfoPrefab = "{B15C5823BAF921FF}RGprice_ItemHint.conf";
+	protected ref SCR_SupplyCostItemHintUIInfo 	m_PriceCostUIInfo;
 
-	override void ShowItemInfo( string sName = "", string sDescr = "", float sWeight = 0.0, SCR_InventoryUIInfo uiInfo = null )
+	int GetPrice()
 	{
 		MyWorldManagerComponent manager = MyWorldManagerComponent.GetInstance();
 		ResourceName targetResource = m_pFocusedSlotUI.GetItemResource();
-		Print(targetResource);
 		foreach (SCR_ArsenalItemStandalone item :  manager.arsenalItems)
 		{
 			if (!item)
@@ -125,58 +126,38 @@ modded class SCR_InventoryMenuUI
 			if (resource.GetResource().GetResourceName() != targetResource)
 				continue;
 	
-			int supplyCost = item.GetSupplyCost(SCR_EArsenalSupplyCostType.DEFAULT, false);
-			Print(supplyCost);
-			
+			return item.GetSupplyCost(SCR_EArsenalSupplyCostType.DEFAULT, false);	
 		}
-		if ( !m_pItemInfo )
-		{
-			//Widget parent = m_widget.FindAnyWidget( "SoldierInfo" );
-			Widget infoWidget = GetGame().GetWorkspace().CreateWidgets(ITEM_INFO, m_widget);
-			if ( !infoWidget )
-				return;
-
-			infoWidget.AddHandler( new SCR_InventoryItemInfoUI() );
-			m_pItemInfo = SCR_InventoryItemInfoUI.Cast( infoWidget.FindHandler( SCR_InventoryItemInfoUI ) );
-		}
-
-		if( !m_pItemInfo )
-			return;
-
-		Widget w = m_pFocusedSlotUI.GetButtonWidget();
-
-		m_pItemInfo.Show( 0.6, w, true );
-		m_pItemInfo.SetName( sName );
-		m_pItemInfo.SetDescription( sDescr );
-		
-		m_pItemInfo.SetWeight( sWeight );
-		if (uiInfo && uiInfo.IsIconVisible())
-			m_pItemInfo.SetIcon(uiInfo.GetIconPath(), uiInfo.GetIconColor());
-		else
-			m_pItemInfo.ShowIcon(false);
-		
-		array<SCR_InventoryItemHintUIInfo> hintsInfo = {};
-		
-		//~ Add hints
-		if (uiInfo)
-			uiInfo.GetItemHintArray(hintsInfo);
-		
-		//~ Add general hints that are not found on the item but are more generic depending where the item is (eg: arsenal) and the components on the item
-		//~ These hints cover a wide arrange of items so that each item does not need to be set up individually
-		GetGeneralItemHintsInfos(hintsInfo);
-
-		//~ If has hints show them
-		if (!hintsInfo.IsEmpty())
-			m_pItemInfo.SetItemHints(m_pFocusedSlotUI.GetInventoryItemComponent(), hintsInfo, m_pFocusedSlotUI);
-		else
-			m_pItemInfo.SetItemHints(m_pFocusedSlotUI.GetInventoryItemComponent());
-			
-		//~ Create Identity UI
-		m_pItemInfo.CreateIdentityUI(SCR_IdentityInventoryItemComponent.Cast(m_pFocusedSlotUI.GetInventoryItemComponent()));
-
-		UpdateItemInfoPosition();
+		return 0;
 	}
-
+	override void GetGeneralItemHintsInfos(out notnull array<SCR_InventoryItemHintUIInfo> hintsInfo)
+	{			
+		SCR_ArsenalInventorySlotUI arsenalSlot = SCR_ArsenalInventorySlotUI.Cast(m_pFocusedSlotUI);
+		if (!arsenalSlot)
+		{
+			m_PriceCostUIInfo.SetSupplyCost(GetPrice());
+			hintsInfo.InsertAt(m_PriceCostUIInfo, 0);
+			super.GetGeneralItemHintsInfos(hintsInfo);
+			foreach (SCR_InventoryItemHintUIInfo hintUIInfo : hintsInfo)
+			{
+				SCR_SupplyCostItemHintUIInfo priceUIInfo = SCR_SupplyCostItemHintUIInfo.Cast(hintUIInfo);
+				/*
+				if (!hintUIInfo.CanBeShown(item, focusedSlot))
+					continue;
+				
+				Widget createdWidget = workspace.CreateWidgets(m_sHintLayout, m_wHintWidget);
+				if (!createdWidget)
+					return;
+				
+				hintUIInfo.SetItemHintNameTo(item, RichTextWidget.Cast(createdWidget.FindAnyWidget("ItemInfo_hintText")));
+				hintUIInfo.SetIconTo(ImageWidget.Cast(createdWidget.FindAnyWidget("ItemInfo_hintIcon")));
+				*/
+			}
+			return;
+		}
+		super.GetGeneralItemHintsInfos(hintsInfo);
+	
+	}
 	protected bool IsShop()
 	{
 		IEntity entityShop;
@@ -411,6 +392,43 @@ modded class SCR_InventoryMenuUI
 	{
 		super.OnMenuOpen();
 		SetMoneyText();
+		m_PriceCostUIInfo = SCR_SupplyCostItemHintUIInfo.Cast(SCR_BaseContainerTools.CreateInstanceFromPrefab(m_sPriceUIInfoPrefab));
 	}
 
+}
+modded class SCR_InventoryItemInfoUI
+{
+	override void SetItemHints(InventoryItemComponent item, array<SCR_InventoryItemHintUIInfo> itemHintArray, SCR_InventorySlotUI focusedSlot)
+	{
+		WorkspaceWidget workspace = GetGame().GetWorkspace();
+		
+		//~ Clear existing hints if any
+		Widget hintChild = m_wHintWidget.GetChildren();
+		Widget deleteHint;
+		while(hintChild)
+		{
+			deleteHint = hintChild;
+			hintChild = deleteHint.GetSibling();
+		
+			delete deleteHint;
+		}
+		
+		foreach (SCR_InventoryItemHintUIInfo hintUIInfo : itemHintArray)
+		{
+			if (!hintUIInfo.CanBeShown(item, focusedSlot))
+				continue;
+			
+			Widget createdWidget = workspace.CreateWidgets(m_sHintLayout, m_wHintWidget);
+			if (!createdWidget)
+				return;
+			
+			hintUIInfo.SetItemHintNameTo(item, RichTextWidget.Cast(createdWidget.FindAnyWidget("ItemInfo_hintText")));
+			ImageWidget test =  ImageWidget.Cast(createdWidget.FindAnyWidget("ItemInfo_hintIcon"));
+			test.SetVisible(false);
+			test.SetEnabled(false);
+			//hintUIInfo.SetIconTo(ImageWidget.Cast(createdWidget.FindAnyWidget("ItemInfo_hintIcon")));
+		}
+
+		SetItemHints(item, false);
+	}
 }
