@@ -226,7 +226,9 @@ modded class SCR_InventoryMenuUI
 
 		if (m_eShopDealDirection == RG_EShopDealDirection.BUY)
 		{
-			MoveBetweenFromVicinity();
+			SCR_ArsenalInventorySlotUI arsenalSlot = SCR_ArsenalInventorySlotUI.Cast(m_pSelectedSlotUI);
+			BaseInventoryStorageComponent storageTo = m_pActiveHoveredStorageUI.GetCurrentNavigationStorage();
+			RequestShopBuy(arsenalSlot, storageTo);
 		}
 		else if (m_eShopDealDirection == RG_EShopDealDirection.SELL)
 		{

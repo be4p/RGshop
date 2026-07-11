@@ -1,6 +1,3 @@
-SCR_ChimeraCharacter : "{37578B1666981FCE}Prefabs/Characters/Core/Character_Base.et" {
- coords 132.727 1 125.54
-}
 Vehicle S105_beige1 : "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beige.et" {
  coords 125.41 1 120.334
  angles 0 -124.509 0
