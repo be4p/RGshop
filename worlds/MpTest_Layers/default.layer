@@ -5,8 +5,9 @@ Vehicle S105_beige1 : "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beig
 GenericEntity : "{5A8A04AB0989C0E6}shopManager.et" {
  coords 125.374 1 134.505
 }
-GenericEntity : "{9B6197BE8951A3A1}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_FIA_NoAffiliation.et" {
- coords 134.687 1 121.398
+GenericEntity : "{8501E99781563FF4}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_Weapons_NoAffiliation.et" {
+ coords 134.878 1 121.04
+ angles 0 0 0
 }
 GenericEntity : "{A2D42CEC3FE02340}Prefabs/Props/Military/Arsenal/ArsenalBoxes/ArsenalBox_Base.et" {
  coords 123.58 1 121.577
